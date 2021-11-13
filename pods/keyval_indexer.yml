@@ -1,0 +1,7 @@
+jtype: KeyValueIndexer
+with:
+  aggr_chunks: None
+metas:
+  name: keyval
+  description: key-value indexer for embedding
+  py_modules: my_executors.py

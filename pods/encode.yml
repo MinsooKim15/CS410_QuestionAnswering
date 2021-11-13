@@ -1,0 +1,9 @@
+jtype: SentenceBERT
+with:
+  device: cpu
+  pretrained_model_name: 'sentence-transformers/bert-base-nli-mean-tokens' 
+  default_traversal_paths: ['c', 'r']
+metas:
+  name: encoder
+  description: SentenceBERT Encoder for IR
+  py_modules: my_executors.py

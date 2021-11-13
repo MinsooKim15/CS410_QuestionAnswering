@@ -1,0 +1,16 @@
+jtype: Flow
+with:
+  workspace: $JINA_WORKSPACE
+  title: QaMatching
+  description: CS410_QuestionAnswering
+executors:
+  - name: Preprocess
+    uses: pods/preprocess.yml
+  - name: SentenceSplitter
+    uses: pods/segment.yml
+  - name: SentenceBERT
+    uses: pods/encode.yml
+  - name: DocVecIndexer
+    uses: pods/vector_indexer.yml
+  - name: KeyValIndexer
+    uses: pods/keyval_lmdb.yml
