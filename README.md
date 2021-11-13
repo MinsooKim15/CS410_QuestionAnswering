@@ -5,6 +5,14 @@ Please fork this repository and paste the github link of your fork on Microsoft 
 ### base sentence embedding model  
   - 'sentence-transformers/bert-base-nli-mean-tokens'
 
+### requirement
+
+```
+python 3.8 
+pip install -r requirement.txt
+```
+
+
 ### Indexing
 ![](index.svg)
 
