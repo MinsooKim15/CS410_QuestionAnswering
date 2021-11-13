@@ -10,7 +10,7 @@ pip install -r requirement.txt
 ```
 
 ### base sentence embedding model  
-  - 'sentence-transformers/bert-base-nli-mean-tokens'
+  - bert-base-nli-mean-tokens(https://huggingface.co/sentence-transformers/bert-base-nli-mean-tokens)
 
 
 ### Indexing
