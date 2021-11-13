@@ -45,13 +45,13 @@ def print_topk(resp, sentence):
                 answer_list = match.tags['answer'].split('\t')
                 if len(answer_list) > 0:
                     for ans in answer_list:
-                        score = match.scores['bert_rerank'].value # rerankí• ë•Œë§Œ #faiss
+                        score = match.scores['cosine'].value # rerankí• ë•Œë§Œ #faiss
                         final_result.append((idx, score, match.text, ans))
                         #print(f'> {idx:>2d}({score:.2f}). {match.text} : {ans}')
                 else:
                     final_result.append((idx, score, match.text, answer_list[0]))
         print(len(final_result))
-        for idx, score, text, ans in final_result[:10]:
+        for idx, score, text, ans in final_result[:5]:
             print(f'> {idx:>2d}({score:.2f}). {text} : {ans}')
             
 
