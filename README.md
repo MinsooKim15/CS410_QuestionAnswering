@@ -21,6 +21,7 @@ pip install -r requirement.txt
 #### With REST API
 #### query
 ![](query.svg)
+
 ```
  python app.py -t query
 data/crawling/example.json
@@ -36,12 +37,13 @@ SentenceSplitter@34012[L]:ready and listening
         🔒 Private network:     192.168.35.52:60808
 Please type a sentence: assignment
 search from DocVectorIndexer
-Ta-DahðŸ”®, here are what we found for: assignment
+Ta-DahðŸ”®, here are what we found for: unable to find onboarding course
 10
->  0(0.65). LiveDataLab Link. I do face same issue. : Hold tight guys! We're aware that the MP links to LiveDataLabs don't work yet. Please check again on Monday! we're working on it.
->  1(0.46). Week 1 Project Overview + Tech. Review Readings Locked?. It is available now.. : We are still working on those pages and will make them available soon. There  is no task from either the Course Project or the Tech Review due any time soon, so please don't worry about missing any important information. In general, please ignore any pages that are not visible to you at this point.
->  2(0.46). Coursera. Try
-https://www.coursera.org/learn/cs-410/home/welcome : I can see that about 176 students have not yet been enrolled on Coursera. I'll see what's going on. Even if you're in the "on-campus" session of the class, you should still have access to the same Coursera session as everybody else.
->  3(0.39). Hello!. Hey David, I would love to be a part of your group : I am more than glad to team up with you for the final project David!!
->  4(0.36). Can't find onboarding course. Log in to coursera organization account (UIUC) and you should see it under My courses : It turns out my account was not linked yet, but MCS helped resend the link to do so.
-```
+>  0(0.51). TA Office hours-21st August. Same here, I'm unable to join as well. : Below is the reply from MCS Support
+"My apologies. TA Office Hours don't start until next week (first week of class). The Live Event you're referring to was created by mistake and has been deleted since. Sorry for the confusion."
+>  1(0.50). Can't find onboarding course. Log in to coursera organization account (UIUC) and you should see it under My courses : It turns out my account was not linked yet, but MCS helped resend the link to do so.
+>  2(0.38). Conditional Entropy. I figured it out: I believe the Conditional Entropy slide is incorrect: the example conditional entropy calculation on this slide does not agree with the formula on the next slide. In other words, the log of each conditional probability needs to be multiplied by the joint probability NOT the conditional probability. (Or you could multiply the log of the conditional probability by the conditional probability and the marginal probability of the conditioning event, but that just seems complicated. : How can the probability of event A occurring be less than the probability of A occurring and B occurring?
+I'm not sure but take a look at:
+https://brilliant.org/wiki/conditional-probability-distribution/
+>  3(0.38). Can't sign up for LiveDataLab. Think this was answered in the #6. They should get it Monday. : LiveDataLab is a complicated cloud-based infrastructure, which we are still working on setting up. We hope to complete the setup ASAP and will post a note here once it's available. You don't need to do anything for now.  LiveDataLab is used for MPs, and the hard deadline for MP1 is sometime in Oct.
+>  4(0.37). Any luck or tips for installing Python3.5 on newer MacOS?. I have attempted these steps and am still unable to install and run python on my machine. I hav MacOS Big Sur. Is it possible for me to get help from a TA in office hours? If so, when would be the best time? : Paul, MeTA should work with Python 3.x.... did you try just using the default Python you have? Are you running into trouble installing MeTA then?
