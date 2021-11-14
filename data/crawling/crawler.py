@@ -16,6 +16,7 @@ import json
 USER_ID = ""
 USER_PASSWORD = ""
 FILENAME = ""
+CHROME_DRIVER_PATH = ""
 def check_exists_by_selector(driver, xpath):
     try:
         driver.find_element_by_css_selector(xpath)
@@ -138,7 +139,7 @@ def crawl_caampuswire():
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome('/Users/minsookim/Desktop/chromedriver', chrome_options=chrome_options)
+    driver = webdriver.Chrome(CHROME_DRIVER_PATH, chrome_options=chrome_options)
     driver.get(url)
     body = driver.find_elements_by_class_name("form-control")
     body[0].send_keys(USER_ID)
