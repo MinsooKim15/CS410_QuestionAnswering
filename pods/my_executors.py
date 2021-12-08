@@ -88,8 +88,10 @@ class Preprocess(Executor):
                                         self.default_traversal_path)
         f_docs = docs.traverse_flat(traversal_path)
         for doc in f_docs:
-            doc.text = doc.tags__title + '. ' + doc.tags__question
-
+            try:
+                doc.text = doc.tags__title + '. ' + doc.tags__question
+            except:
+                pass
 
 class SentenceBERT(Executor):
     def __init__(
@@ -270,8 +272,11 @@ class DocVectorIndexer(Executor):
         for _q, _ids, _dists in zip(docs, idx, dist):
             for _id, _dist in zip(_ids, _dists):
                 d = Document(self._docs[int(_id)], copy=True)
-                d.scores['cosine'] = 1 - _dist # cosine sim.
-                _q.matches.append(d)
+                cosine_score = 1 - _dist # cosine sim.
+                if cosine_score > 0.6:
+                    d.scores['cosine'] = cosine_score
+                    _q.matches.append(d)
+                    
 
     @staticmethod
     def _get_sorted_top_k(dist: 'np.array',
