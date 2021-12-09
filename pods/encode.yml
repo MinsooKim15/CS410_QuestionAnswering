@@ -1,7 +1,7 @@
 jtype: SentenceBERT
 with:
-  device: cpu
-  pretrained_model_name: 'sentence-transformers/bert-base-nli-mean-tokens' 
+  device: cuda
+  pretrained_model_name: 'sentence-transformers/all-mpnet-base-v2'
   default_traversal_paths: ['c', 'r']
 metas:
   name: encoder

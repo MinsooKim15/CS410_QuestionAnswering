@@ -129,7 +129,7 @@ class SentenceBERT(Executor):
         except:
             # wget https://public.ukp.informatik.tu-darmstadt.de/reimers/sentence-transformers/v0.2/all-mpnet-base-v2.zip
             # unzip if not possible to to this
-            self.model = SentenceTransformer(self.pretrained_model_path)
+            self.model = SentenceTransformer(self.pretrained_model_)
         self.tokenizer = self.model.tokenizer
 
         self.model.eval()
