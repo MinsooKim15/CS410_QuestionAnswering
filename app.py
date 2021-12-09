@@ -66,7 +66,11 @@ def _pre_processing(data_path):
     df = pd.read_csv(data_path, sep='\t')
     for i, row in df.iterrows():
         try:
+            row['title'] = row['title'].replace('\n', ' ')
+            row['text'] = row['text'].replace('\n', ' ')
+            row['answer'] = row['answer'].replace('\n', ' ')
             d = {'id': row['id'], 'title': row['title'], 'text':  row['text'], 'answer': row['answer']}
+            print(d)
             results.append(Document(json.dumps(d, ensure_ascii=False)))
         except:
             pass
@@ -156,7 +160,7 @@ def dump():
 )
 @click.option("--top_k", "-k", default=5)
 @click.option('--query_flow', type=click.Path(exists=True), default='flows/query.yml')
-@click.option("--workspace", "-w", default="workspace")
+@click.option("--workspace", "-w", default="workspace_min")
 def main(task, top_k, query_flow, workspace):
     config(workspace)
     workspace = os.environ["JINA_WORKSPACE"]

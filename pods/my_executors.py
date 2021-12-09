@@ -46,8 +46,8 @@ import pickle
 import os 
 from transformers import AutoTokenizer, AutoModel
 import torch
-
-
+import torch.nn as nn
+from bm25 import *
 ## 루트 path를 가져오기 위함
 tmp = os.getcwd().split('/')
 HOME_PATH = '/'.join(tmp[:tmp.index('CS410_QuestionAnswering')])
@@ -82,21 +82,29 @@ class Preprocess(Executor):
         super().__init__(*args, **kwargs)
         self.default_traversal_path = default_traversal_path or ['r']
 
-    @requests(on=['/index'])
+#     @requests(on=['/index'])
+#     def preprocess(self, docs: DocumentArray, parameters: Dict, **kwargs):
+#         traversal_path = parameters.get('traversal_paths',
+#                                         self.default_traversal_path)
+#         f_docs = docs.traverse_flat(traversal_path)
+#         for doc in f_docs:
+#             try:
+#                 doc.text = doc.tags__title + '/n' + doc.tags__question
+#             except:
+#                 print('except')
+#                 pass
+    @requests(on=['/search'])
     def preprocess(self, docs: DocumentArray, parameters: Dict, **kwargs):
         traversal_path = parameters.get('traversal_paths',
                                         self.default_traversal_path)
         f_docs = docs.traverse_flat(traversal_path)
         for doc in f_docs:
-            try:
-                doc.text = doc.tags__title + '. ' + doc.tags__question
-            except:
-                pass
+            print(doc.text)
 
 class SentenceBERT(Executor):
     def __init__(
         self,
-        pretrained_model_path: str = '/home/x1112373z/all-mpnet-base-v2/',
+        pretrained_model_path: str = '/home/x1112373z/CS410_QuestionAnswering/sentence-transformers/all-mpnet-base-v2/',
         max_length: int = 128,
         device: str = 'cuda',
         default_traversal_paths: Optional[List[str]] = None,
@@ -125,7 +133,7 @@ class SentenceBERT(Executor):
             )
         self.device = device
         try:
-            self.model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
+            self.model = SentenceTransformer('/home/x1112373z/CS410_QuestionAnswering/sentence-transformers/all-mpnet-base-v2/')
         except:
             # wget https://public.ukp.informatik.tu-darmstadt.de/reimers/sentence-transformers/v0.2/all-mpnet-base-v2.zip
             # unzip if not possible to to this
@@ -163,16 +171,16 @@ class SentenceBERT(Executor):
             texts = batch.get_attributes('text')
             processed_content = []
             for cont in texts:
-                processed_content.append(cont)
+                processed_content.append(self.tokenizer.bos_token + cont + self.tokenizer.eos_token)
             
-            
+            print(processed_content)
             encoded_input = self.tokenizer(list(processed_content),
                                             return_tensors='pt',
                                             max_length=self.max_length,
                                             padding=True, truncation=True)
 
             with torch.no_grad():
-                model_output = self.model({'input_ids': torch.tensor(encoded_input['input_ids']).cuda(), 'attention_mask': torch.tensor(encoded_input['attention_mask']).cuda()} )
+                model_output = self.model({'input_ids': torch.tensor(encoded_input['input_ids']).clone().detach().cuda(), 'attention_mask': torch.tensor(encoded_input['attention_mask']).clone().detach().cuda()} )
                 if self.device == 'cuda':
                     embedding = mean_pooling(model_output, encoded_input['attention_mask'])
                     
@@ -231,15 +239,16 @@ class Segmenter(Executor):
                          location=[s, e]))
         return results
 
-    @requests(on=['/index'])
-    def segment(self, docs: DocumentArray, parameters: Dict, **kwargs):
-        traversal_path = parameters.get('traversal_paths',
-                                        self.default_traversal_path)
-        f_docs = docs.traverse_flat(traversal_path)
-        for doc in f_docs:
-            chunks = self._split(doc.text)
-            for c in chunks:
-                doc.chunks += [(Document(**c, mime_type='text/plain'))]
+#     @requests(on=['/index', '/search'])
+#     def segment(self, docs: DocumentArray, parameters: Dict, **kwargs):
+#         traversal_path = parameters.get('traversal_paths',
+#                                         self.default_traversal_path)
+#         f_docs = docs.traverse_flat(traversal_path)
+#         for doc in f_docs:
+#             chunks = self._split(doc.text)
+#             for c in chunks:
+#                 doc.chunks += [(Document(**c, mime_type='text/plain'))]
+            
 
 
 class DocVectorIndexer(Executor):
@@ -247,7 +256,12 @@ class DocVectorIndexer(Executor):
         super().__init__(**kwargs)
         self.aggr_chunks = aggr_chunks.lower()
         self._docs = DocumentArrayMemmap(self.workspace + f'/{index_file_name}')
-        
+        self.db_embeddings = torch.tensor(self._docs.get_attributes('embedding'))
+        self.db_len = int(self.db_embeddings.shape[0])
+        self.cos_sim = nn.CosineSimilarity(dim=1)
+        self.tokenizer = Mecab()
+        self.tokenized_corpus = []  
+        self.bm25 = None
 
     @requests(on='/index')
     def index(self, docs: DocumentArray, **kwargs):
@@ -256,48 +270,50 @@ class DocVectorIndexer(Executor):
     @requests(on=['/search'])
     def search(self, docs: DocumentArray, parameters: Dict, **kwargs):
         print('search from DocVectorIndexer')
+        top_k = int(parameters['top_k'])
         if docs is None:
             return
-        
+        if self.bm25 is None:
+            self.tokenized_corpus = [self.tokenizer.morphs(doc.text.lower()) for doc in self._docs]
+            self.bm25 = BM25Okapi(self.tokenized_corpus)
         a = np.stack(docs.get_attributes('embedding'))
         q_emb = _ext_A(_norm(a))
         # get chunk embeddings and 'min' aggr
-        if self.aggr_chunks == 'none':
-            # 전체 질문에 대한 embedding vector
-            embedding_matrix = _ext_B(_norm(np.stack(self._docs.get_attributes('embedding'))))
-            dists = _cosine(q_emb, embedding_matrix)
-        else:
-            aggr_chunk_dist = []
-            for d in self._docs:
-                b = np.stack(d.chunks.get_attributes('embedding'))
-                d_emb = _ext_B(_norm(b))
-                dists = _cosine(q_emb, d_emb) # cosine distance
-                aggr_chunk_dist.append(dists[:, np.argmin(dists)])
-            dists = np.stack(aggr_chunk_dist, axis=1)
-        idx, dist = self._get_sorted_top_k(dists, int(parameters['top_k']))
-        for _q, _ids, _dists in zip(docs, idx, dist):
-            for _id, _dist in zip(_ids, _dists):
-                d = Document(self._docs[int(_id)], copy=True)
-                cosine_score = 1 - _dist # cosine sim.
-                if cosine_score > 0.6:
-                    d.scores['cosine'] = cosine_score
-                    _q.matches.append(d)
-                    
+        new_docs = []
+        origin_answer_list = []
+        for doc in docs:
 
-    @staticmethod
-    def _get_sorted_top_k(dist: 'np.array',
-                          top_k: int) -> Tuple['np.ndarray', 'np.ndarray']:
-        if top_k >= dist.shape[1]:
-            idx = dist.argsort(axis=1)[:, :top_k]
-            dist = np.take_along_axis(dist, idx, axis=1)
-        else:
-            idx_ps = dist.argpartition(kth=top_k, axis=1)[:, :top_k]
-            dist = np.take_along_axis(dist, idx_ps, axis=1)
-            idx_fs = dist.argsort(axis=1)
-            idx = np.take_along_axis(idx_ps, idx_fs, axis=1)
-            dist = np.take_along_axis(dist, idx_fs, axis=1)
+            filtered_len = len(self._docs)
+            q_embedding = torch.tensor(doc.get_attributes('embedding')).repeat(filtered_len, 1)
+            dists = self.cos_sim(q_embedding, self.db_embeddings)
+            sorted_ = torch.sort(dists, descending=True)
+            q_tokenized = self.tokenizer.morphs(doc.text.lower())
+            
+            text_list = []
+            for _id, _dist in zip(sorted_.indices[:top_k], sorted_.values[:top_k]):
+                ii = int(_id.detach().numpy())
+                print('-------answer candidate------')
+                print(self._docs[ii].tags)
+                print(self._docs[ii].text)
+                print('------------------')
 
-        return idx, dist
+
+                if 0.5 <= float(_dist):
+                    d = Document(text=doc.text)
+                    db_tokenized = self.tokenized_corpus[ii]
+                    print(db_tokenized)
+                    bm_score  = round(self.bm25.get_scores(q_tokenized, db_tokenized), 3)
+                    d.scores['cosine'] = round(float(_dist), 3)
+                    d.tags['question'] = self._docs[ii].text
+                    d.scores['bm'] = bm_score
+                    d.tags['answer'] = self._docs[ii].tags__answer
+                    #d.tags['id'] = self._docs[ii].tags__id
+                    print('-------answer------')
+                    print(d)
+                    print('------------------')
+                    new_docs.append(d) 
+        return DocumentArray(new_docs)
+
 
 
 class KeyValueIndexer(Executor):

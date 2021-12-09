@@ -34,20 +34,21 @@ class text:
                         "data": [query]
                     }
             response = requests.post(endpoint, headers=headers, json=data)
+            print(response.json()["data"]["docs"])
             content = response.json()["data"]["docs"]
             results = []
             for doc in content:
-                matches = doc["matches"]  # list
-                for match in matches:
-                    id = match['id']
-                    score = match['scores']['cosine']['value']
-                    question = match["tags"]["title"]+ '&' +  match['text']
-                    answer = match["tags"]["answer"]
-                    results.append(OrderedDict({'id': id, 'base_score': score,
-                                                'question&title': question,
-                                                'answer': answer}))
+                #matches = doc["matches"]  # list
+                #id = match['id']
+                cosine_score = doc['scores']['cosine']['value']
+                question = doc['tags']['question']
+                answer = doc["tags"]["answer"]
+                bm_score = doc['scores']['bm']['value']
+                results.append(OrderedDict({'question': question,
+                                            'answer': answer,
+                                            'cosine_score(question and query)': cosine_score,
+                                            'bm_score(question and query)': bm_score}))
             return results
-
 
 class image:
     """
