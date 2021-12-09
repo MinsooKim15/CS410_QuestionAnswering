@@ -47,3 +47,6 @@ I'm not sure but take a look at:
 https://brilliant.org/wiki/conditional-probability-distribution/
 >  3(0.38). Can't sign up for LiveDataLab. Think this was answered in the #6. They should get it Monday. : LiveDataLab is a complicated cloud-based infrastructure, which we are still working on setting up. We hope to complete the setup ASAP and will post a note here once it's available. You don't need to do anything for now.  LiveDataLab is used for MPs, and the hard deadline for MP1 is sometime in Oct.
 >  4(0.37). Any luck or tips for installing Python3.5 on newer MacOS?. I have attempted these steps and am still unable to install and run python on my machine. I hav MacOS Big Sur. Is it possible for me to get help from a TA in office hours? If so, when would be the best time? : Paul, MeTA should work with Python 3.x.... did you try just using the default Python you have? Are you running into trouble installing MeTA then?
+
+### demo
+http://uiuc-cs410-demo.ngrok.io/(temporary address)
