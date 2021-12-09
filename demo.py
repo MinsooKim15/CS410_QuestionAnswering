@@ -108,7 +108,7 @@ class jina:
             if "endpoint" not in hidden:
                 endpoint = st.text_input("Endpoint", endpoint)
 
-            query = st.text_input("Enter query", value='Chrome Extension Using React')
+            query = st.text_input("Enter query", value="I can't download chrome Extension")
             print(f'Query: {query}')
 
             if "top_k" not in hidden:

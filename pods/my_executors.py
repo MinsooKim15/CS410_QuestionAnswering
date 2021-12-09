@@ -25,7 +25,7 @@ import re
 import os
 from typing import Dict, List, Optional, Tuple
 from jina.types.document import DocumentSourceType
-
+from sentence_transformers import SentenceTransformer, util
 import numpy as np
 import pytorch_lightning as pl
 import torch
@@ -96,9 +96,9 @@ class Preprocess(Executor):
 class SentenceBERT(Executor):
     def __init__(
         self,
-        pretrained_model_name: str = 'sentence-transformers/bert-base-nli-mean-tokens',
+        pretrained_model_path: str = '/home/x1112373z/all-mpnet-base-v2/',
         max_length: int = 128,
-        device: str = 'cpu',
+        device: str = 'cuda',
         default_traversal_paths: Optional[List[str]] = None,
         default_batch_size: int = 32,
         *args,
@@ -110,7 +110,7 @@ class SentenceBERT(Executor):
         else:
             self.default_traversal_paths = ['r']
         self.max_length = max_length
-        self.pretrained_model_name = pretrained_model_name
+        self.pretrained_model_path = pretrained_model_path
         self.default_batch_size = default_batch_size
         self.logger = JinaLogger(self.__class__.__name__)
         if not device in ['cpu', 'cuda']:
@@ -123,12 +123,15 @@ class SentenceBERT(Executor):
                 'You tried to use GPU but torch did not detect your'
                 'GPU correctly. Defaulting to CPU. Check your CUDA installation!'
             )
-            device = 'cpu'
         self.device = device
-        
+        try:
+            self.model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
+        except:
+            # wget https://public.ukp.informatik.tu-darmstadt.de/reimers/sentence-transformers/v0.2/all-mpnet-base-v2.zip
+            # unzip if not possible to to this
+            self.model = SentenceTransformer(self.pretrained_model_path)
+        self.tokenizer = self.model.tokenizer
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name)
-        self.model = AutoModel.from_pretrained(self.pretrained_model_name)
         self.model.eval()
         self.model.to(torch.device(device))
 
@@ -143,8 +146,10 @@ class SentenceBERT(Executor):
         :param kwargs: Additional key value arguments.
         """
         def mean_pooling(model_output, attention_mask):
-            token_embeddings = model_output[0] #First element of model_output contains all token embeddings
+            token_embeddings = model_output['token_embeddings'] #First element of model_output contains all token embeddings
             input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+            token_embeddings = token_embeddings.cuda()
+            input_mask_expanded = input_mask_expanded.cuda()
             return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
         for batch in get_docs_batch_generator(
@@ -159,16 +164,17 @@ class SentenceBERT(Executor):
             processed_content = []
             for cont in texts:
                 processed_content.append(cont)
-                
+            
+            
             encoded_input = self.tokenizer(list(processed_content),
                                             return_tensors='pt',
                                             max_length=self.max_length,
                                             padding=True, truncation=True)
-                                            
+
             with torch.no_grad():
-                model_output = self.model(**encoded_input)
+                model_output = self.model({'input_ids': torch.tensor(encoded_input['input_ids']).cuda(), 'attention_mask': torch.tensor(encoded_input['attention_mask']).cuda()} )
                 if self.device == 'cuda':
-                    embedding = mean_pooling(model_output.cuda(), encoded_input['attention_mask'].cuda())
+                    embedding = mean_pooling(model_output, encoded_input['attention_mask'])
                     
                 elif self.device == 'cpu':
                     embedding = mean_pooling(model_output, encoded_input['attention_mask'])

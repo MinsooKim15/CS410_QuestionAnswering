@@ -40,7 +40,7 @@ class NpEncoder(json.JSONEncoder):
     
 def config(workspace):
     os.environ["JINA_DATA_FILE"] = os.environ.get(
-        "JINA_DATA_FILE", "data/crawling/data_1125.json"
+        "JINA_DATA_FILE", "data/crawling/input_data.tsv"
     )
     os.environ["JINA_WORKSPACE"] =  os.environ.get("JINA_WORKSPACE", workspace)
 
@@ -53,14 +53,7 @@ def print_topk(resp, sentence):
         print(f"Ta-DahðŸ”®, here are what we found for: {sentence}")
         while len(final_result) < 10:   
             for idx, match in enumerate(d.matches):
-                answer_list = match.tags['answer'].split('\t')
-                if len(answer_list) > 0:
-                    for ans in answer_list:
-                        score = match.scores['cosine'].value # rerankí• ë•Œë§Œ #faiss
-                        final_result.append((idx, score, match.text, ans))
-                        #print(f'> {idx:>2d}({score:.2f}). {match.text} : {ans}')
-                else:
-                    final_result.append((idx, score, match.text, answer_list[0]))
+                final_result.append((idx, score, match.text, match.answer))
         print(len(final_result))
         for idx, score, text, ans in final_result[:5]:
             print(f'> {idx:>2d}({score:.2f}). {text} : {ans}')
@@ -70,13 +63,11 @@ def print_topk(resp, sentence):
 def _pre_processing(data_path):
     print('start of pre-processing')
     results = []
-    f = open(data_path, 'rt')
-    documents = json.load(f)
-    for doc in documents:
+    df = pd.read_csv(data_path, sep='\t')
+    for i, row in df.iterrows():
         try:
-            for rep in doc['replyList']:
-                d = {'id': doc['id'], 'title': deEmojify(doc['title']), 'text':  deEmojify(doc['content']), 'answer': deEmojify(rep['content'])}
-                results.append(Document(json.dumps(d, ensure_ascii=False)))
+            d = {'id': row['id'], 'title': row['title'], 'text':  row['text'], 'answer': row['answer']}
+            results.append(Document(json.dumps(d, ensure_ascii=False)))
         except:
             pass
     return results
@@ -165,7 +156,7 @@ def dump():
 )
 @click.option("--top_k", "-k", default=5)
 @click.option('--query_flow', type=click.Path(exists=True), default='flows/query.yml')
-@click.option("--workspace", "-w", default="workspace_bak")
+@click.option("--workspace", "-w", default="workspace")
 def main(task, top_k, query_flow, workspace):
     config(workspace)
     workspace = os.environ["JINA_WORKSPACE"]
