@@ -2,6 +2,8 @@
 
 Please fork this repository and paste the github link of your fork on Microsoft CMT. Detailed instructions are on Coursera under Week 1: Course Project Overview/Week 9 Activities.
  
+- 📼 Presentation Video : https://uillinoisedu-my.sharepoint.com/:v:/g/personal/minsoo4_illinois_edu/EVJ8dtvsoYBDmAu_Wwm6xJcB_8VnBYiwmUtRsuyxzrycpg?e=ctzBOq
+ 
 ### requirement
 
 ```
